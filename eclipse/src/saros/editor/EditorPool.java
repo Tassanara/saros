@@ -20,7 +20,10 @@ import org.eclipse.ui.texteditor.IDocumentProvider;
 import org.eclipse.ui.texteditor.IElementStateListener;
 import org.eclipse.ui.texteditor.ITextEditor;
 import saros.editor.internal.EditorAPI;
-import saros.filesystem.ResourceAdapterFactory;
+import saros.filesystem.IReferencePoint;
+import saros.filesystem.ResourceConverter;
+import saros.session.ISarosSession;
+import saros.session.ISarosSessionManager;
 import saros.session.User.Permission;
 
 /**
@@ -50,6 +53,7 @@ final class EditorPool {
   }
 
   private final EditorManager editorManager;
+  private final ISarosSessionManager sarosSessionManager;
 
   private final DirtyStateListener dirtyStateListener;
 
@@ -75,8 +79,10 @@ final class EditorPool {
   /** Editors where the user isn't allowed to write */
   private final List<IEditorPart> lockedEditors = new ArrayList<IEditorPart>();
 
-  EditorPool(EditorManager editorManager) {
+  EditorPool(EditorManager editorManager, ISarosSessionManager sarosSessionManager) {
     this.editorManager = editorManager;
+    this.sarosSessionManager = sarosSessionManager;
+
     this.dirtyStateListener = new DirtyStateListener(editorManager);
     this.documentListener = new StoppableDocumentListener(editorManager);
   }
@@ -124,6 +130,14 @@ final class EditorPool {
 
     findAndLogDocumentProviderIssues(editorPart);
 
+    final saros.filesystem.IFile wrappedFile = convert(file);
+
+    if (wrappedFile == null) {
+      log.error("editor part does not represent a shared file: " + editorPart + ", file: " + file);
+
+      return;
+    }
+
     /*
      * Connecting causes Conversion of Delimiters which trigger Selection
      * and Save Activities, so connect before adding listeners
@@ -143,8 +157,6 @@ final class EditorPool {
 
     dirtyStateListener.register(documentProvider, input);
     documentProvider.getDocument(input).addDocumentListener(documentListener);
-
-    final saros.filesystem.IFile wrappedFile = ResourceAdapterFactory.create(file);
 
     Set<IEditorPart> parts = editorParts.get(wrappedFile);
 
@@ -237,7 +249,30 @@ final class EditorPool {
 
     editorManager.disconnect(file);
 
-    final saros.filesystem.IFile wrappedFile = ResourceAdapterFactory.create(file);
+    final saros.filesystem.IFile wrappedFile = convert(file);
+
+    if (wrappedFile == null) {
+      if (sarosSessionManager.getSession() != null) {
+        log.error(
+            "Encountered editor pool entry for non-shared resource "
+                + file
+                + ", editor part: "
+                + editorPart);
+      }
+
+      for (Set<IEditorPart> heldEditorParts : editorParts.values()) {
+        boolean containedEntry = heldEditorParts.remove(editorPart);
+
+        if (containedEntry) {
+          return;
+        }
+      }
+
+      log.error(
+          "Managed editor part not actually contained in editor part mapping - " + editorPart);
+
+      return;
+    }
 
     editorParts.get(wrappedFile).remove(editorPart);
   }
@@ -342,5 +377,24 @@ final class EditorPool {
               + editorPart.getTitle()
               + "' might not support shared access. It is likely that the editor content is not properly synchronized!");
     }
+  }
+
+  /**
+   * Returns a Saros file object representing the given Eclipse file.
+   *
+   * @param file the file to convert to a Saros file
+   * @return a Saros file object representing the given Eclipse file or <code>null</code> if there
+   *     is currently nu running session or the file does not belong to a shared reference point
+   */
+  private saros.filesystem.IFile convert(final IFile file) {
+    final ISarosSession session = sarosSessionManager.getSession();
+
+    if (session == null) {
+      return null;
+    }
+
+    final Set<IReferencePoint> referencePoints = session.getReferencePoints();
+
+    return ResourceConverter.convertToFile(referencePoints, file);
   }
 }

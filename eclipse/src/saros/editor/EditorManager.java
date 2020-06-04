@@ -375,7 +375,7 @@ public class EditorManager implements IEditorManager {
 
     this.preferenceStore = preferenceStore;
 
-    editorPool = new EditorPool(this);
+    editorPool = new EditorPool(this, sessionManager);
     partListener = new SafePartListener2(log, new EditorPartListener(this));
 
     registerCustomAnnotations();
