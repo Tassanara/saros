@@ -665,30 +665,16 @@ public abstract class BaseResourceSelectionComposite extends ViewerComposite<Che
   }
 
   /**
-   * Returns the displayed resources.
+   * returns the displayed project resources.
    *
-   * @return the displayed resources
+   * @return the displayed project resources
    */
-  public List<IResource> getResources() {
+  public List<IProject> getDisplayedProjects() {
     WorkbenchContentProvider contentProvider =
         (WorkbenchContentProvider) getViewer().getContentProvider();
 
     Object[] objects = contentProvider.getElements(getViewer().getInput());
-    return ArrayUtils.getAdaptableObjects(objects, IResource.class, Platform.getAdapterManager());
-  }
-
-  /**
-   * Returns how many projects are displayed.
-   *
-   * @return how many projects are displayed
-   */
-  public int getProjectsCount() {
-    WorkbenchContentProvider contentProvider =
-        (WorkbenchContentProvider) getViewer().getContentProvider();
-
-    Object[] objects = contentProvider.getElements(getViewer().getInput());
-    return ArrayUtils.getAdaptableObjects(objects, IProject.class, Platform.getAdapterManager())
-        .size();
+    return ArrayUtils.getAdaptableObjects(objects, IProject.class, Platform.getAdapterManager());
   }
 
   @Override

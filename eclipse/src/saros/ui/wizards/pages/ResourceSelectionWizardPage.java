@@ -5,6 +5,7 @@ import java.util.Collection;
 import java.util.List;
 import org.apache.log4j.Logger;
 import org.eclipse.core.resources.IContainer;
+import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResource;
 import org.eclipse.jface.wizard.WizardPage;
 import org.eclipse.swt.SWT;
@@ -105,23 +106,24 @@ public class ResourceSelectionWizardPage extends WizardPage {
 
             final List<IResource> selectedResources = new ArrayList<IResource>();
 
-            if (preselectedResources != null && preselectedResources.size() > 0) {
+            resourceSelectionComposite.addResourceSelectionListener(resourceSelectionListener);
 
+            if (preselectedResources != null && preselectedResources.size() > 0) {
               selectedResources.addAll(preselectedResources);
               resourceSelectionComposite.setSelectedResources(selectedResources);
             }
 
             preselectedResources = null; // GC
 
-            resourceSelectionComposite.addResourceSelectionListener(resourceSelectionListener);
             /*
              * If nothing is selected and only one project exists in the
              * workspace, select it in the Wizard.
              */
-            if (selectedResources.size() == 0
-                && resourceSelectionComposite.getProjectsCount() == 1) {
+            List<IProject> displayedProjects = resourceSelectionComposite.getDisplayedProjects();
 
-              selectedResources.addAll(resourceSelectionComposite.getResources());
+            if (selectedResources.size() == 0 && displayedProjects.size() == 1) {
+
+              selectedResources.addAll(displayedProjects);
 
               resourceSelectionComposite.setSelectedResources(selectedResources);
             }
@@ -131,7 +133,13 @@ public class ResourceSelectionWizardPage extends WizardPage {
              * properly.
              */
             resourceSelectionComposite.rememberSelection();
-            setPageComplete(selectedResources.size() > 0);
+
+            if (selectedResources.size() > 0) {
+              setPageComplete(true);
+            } else {
+              setErrorMessage(Messages.ProjectSelectionWizardPage_selected_no_project);
+              setPageComplete(false);
+            }
           }
         };
 
