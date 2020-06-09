@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import org.apache.log4j.Logger;
+import org.eclipse.core.resources.IContainer;
 import org.eclipse.core.resources.IResource;
 import org.eclipse.jface.wizard.WizardPage;
 import org.eclipse.swt.SWT;
@@ -162,8 +163,7 @@ public class ResourceSelectionWizardPage extends WizardPage {
   /*
    * WizardPage Results
    */
-
-  public List<IResource> getSelectedResources() {
+  public List<IContainer> getSelectedResources() {
     if (resourceSelectionComposite == null || resourceSelectionComposite.isDisposed()) return null;
 
     return resourceSelectionComposite.getSelectedResources();
