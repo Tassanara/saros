@@ -58,33 +58,16 @@ public class CollaborationUtils {
   }
 
   /**
-   * Starts a new session and shares the given resources with given contacts.<br>
-   * Does nothing if a {@link ISarosSession session} is already running.
+   * Starts a new session and shares the given reference points with the given contacts.
    *
-   * @param resources
-   * @param contacts
+   * <p>Does nothing if a {@link ISarosSession session} is already running.
+   *
+   * @param referencePoints the reference points to share
+   * @param contacts the contacts to share the reference points with
    * @nonBlocking
    */
-  public static void startSession(final List<IResource> resources, final List<JID> contacts) {
-    // TODO remove assertion that only projects are shared (resolved in followup PR)
-    assert resources.stream().allMatch(resource -> resource instanceof IProject)
-        : "Encountered non-project resource to share";
-
-    final Set<IProject> projects =
-        resources.stream().map(resource -> (IProject) resource).collect(Collectors.toSet());
-
-    startSession(projects, contacts);
-  }
-
-  /**
-   * Starts a new session and shares the given projects with given contacts.<br>
-   * Does nothing if a {@link ISarosSession session} is already running.
-   *
-   * @param projects the projects share
-   * @param contacts the contacts to share the projects with
-   * @nonBlocking
-   */
-  public static void startSession(final Set<IProject> projects, final List<JID> contacts) {
+  public static void startSession(
+      final Set<IReferencePoint> referencePoints, final List<JID> contacts) {
     Job sessionStartupJob =
         new Job("Session Startup") {
 
@@ -92,10 +75,20 @@ public class CollaborationUtils {
           protected IStatus run(IProgressMonitor monitor) {
             monitor.beginTask("Starting session...", IProgressMonitor.UNKNOWN);
 
+            Set<IProject> projects =
+                referencePoints
+                    .stream()
+                    .map(
+                        referencePoint ->
+                            ResourceConverter.getDelegate(referencePoint).getProject())
+                    .collect(Collectors.toSet());
+
             try {
               refreshProjects(projects, null);
-              sessionManager.startSession(convert(projects));
-              Set<JID> participantsToAdd = new HashSet<JID>(contacts);
+
+              sessionManager.startSession(referencePoints);
+
+              Set<JID> participantsToAdd = new HashSet<>(contacts);
 
               ISarosSession session = sessionManager.getSession();
 
