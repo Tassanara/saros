@@ -1,6 +1,5 @@
 package saros.ui.util;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -23,7 +22,6 @@ import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.swt.widgets.Shell;
 import saros.Saros;
 import saros.SarosPluginContext;
-import saros.filesystem.EclipseReferencePointImpl;
 import saros.filesystem.IReferencePoint;
 import saros.filesystem.ResourceConverter;
 import saros.net.xmpp.JID;
@@ -161,36 +159,15 @@ public class CollaborationUtils {
   }
 
   /**
-   * Adds the given project resources to the session.<br>
-   * Does nothing if no {@link SarosSession session} is running.
+   * Adds the given reference points to the session.
    *
-   * @param resourcesToAdd
+   * <p>Does nothing if no {@link SarosSession session} is running.
+   *
+   * @param referencePoints the reference points to add to the session
    * @nonBlocking
    */
-  public static void addResourcesToSession(List<IResource> resourcesToAdd) {
-
-    if (resourcesToAdd.isEmpty()) return;
-
-    // TODO remove assertion that only projects are shared (resolved in followup PR)
-    assert resourcesToAdd.stream().allMatch(resource -> resource instanceof IProject)
-        : "Encountered non-project resource to share";
-
-    final Set<IProject> projects =
-        resourcesToAdd.stream().map(resource -> (IProject) resource).collect(Collectors.toSet());
-
-    addResourcesToSession(projects);
-  }
-
-  /**
-   * Adds the given project resources to the session.<br>
-   * Does nothing if no {@link SarosSession session} is running.
-   *
-   * @param projectsToAdd the projects to add to the session
-   * @nonBlocking
-   */
-  public static void addResourcesToSession(Set<IProject> projectsToAdd) {
-
-    final ISarosSession session = sessionManager.getSession();
+  public static void addReferencePointsToSession(Set<IReferencePoint> referencePoints) {
+    ISarosSession session = sessionManager.getSession();
 
     if (session == null) {
       log.warn("cannot add resources to a non-running session");
@@ -200,38 +177,33 @@ public class CollaborationUtils {
     ThreadUtils.runSafeAsync(
         "AddResourceToSession",
         log,
-        new Runnable() {
-          @Override
-          public void run() {
-
-            if (!session.hasWriteAccess()) {
-              DialogUtils.popUpFailureMessage(
-                  Messages.CollaborationUtils_insufficient_privileges,
-                  Messages.CollaborationUtils_insufficient_privileges_text,
-                  false);
-              return;
-            }
-
-            final List<IProject> projectsToRefresh = new ArrayList<IProject>();
-
-            for (IProject project : projectsToAdd) {
-              if (!session.isShared(new EclipseReferencePointImpl(project))) {
-                projectsToRefresh.add(project);
-              }
-            }
-
-            try {
-              refreshProjects(projectsToRefresh, null);
-            } catch (CoreException e) {
-              log.warn("failed to refresh projects", e);
-              /*
-               * FIXME use a Job instead of a plain thread and so better
-               * execption handling !
-               */
-            }
-
-            sessionManager.addReferencePointsToSession(convert(projectsToAdd));
+        () -> {
+          if (!session.hasWriteAccess()) {
+            DialogUtils.popUpFailureMessage(
+                Messages.CollaborationUtils_insufficient_privileges,
+                Messages.CollaborationUtils_insufficient_privileges_text,
+                false);
+            return;
           }
+
+          Set<IProject> projects =
+              referencePoints
+                  .stream()
+                  .map(referencePoint -> ResourceConverter.getDelegate(referencePoint).getProject())
+                  .collect(Collectors.toSet());
+
+          try {
+            refreshProjects(projects, null);
+
+          } catch (CoreException e) {
+            log.warn("failed to refresh projects", e);
+            /*
+             * FIXME use a Job instead of a plain thread and so better
+             * execption handling !
+             */
+          }
+
+          sessionManager.addReferencePointsToSession(referencePoints);
         });
   }
 
@@ -314,10 +286,6 @@ public class CollaborationUtils {
       return String.format(Locale.US, "%.2f MB", size / (1000F * 1000F));
 
     return String.format(Locale.US, "%.2f GB", size / (1000F * 1000F * 1000F));
-  }
-
-  private static Set<IReferencePoint> convert(Set<IProject> projects) {
-    return projects.stream().map(EclipseReferencePointImpl::new).collect(Collectors.toSet());
   }
 
   private static void refreshProjects(
