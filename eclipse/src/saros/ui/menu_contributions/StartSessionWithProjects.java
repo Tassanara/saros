@@ -14,7 +14,7 @@ import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.widgets.Menu;
 import org.eclipse.swt.widgets.MenuItem;
 import org.eclipse.ui.model.WorkbenchLabelProvider;
-import saros.filesystem.EclipseReferencePointImpl;
+import saros.filesystem.EclipseReferencePoint;
 import saros.net.xmpp.JID;
 import saros.ui.Messages;
 import saros.ui.util.CollaborationUtils;
@@ -94,7 +94,7 @@ public class StartSessionWithProjects extends ContributionItem {
           @Override
           public void widgetSelected(SelectionEvent e) {
             CollaborationUtils.startSession(
-                Collections.singleton(new EclipseReferencePointImpl(project)), contacts);
+                Collections.singleton(new EclipseReferencePoint(project)), contacts);
           }
         });
 

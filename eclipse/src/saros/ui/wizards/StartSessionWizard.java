@@ -9,7 +9,7 @@ import org.eclipse.core.resources.IResource;
 import org.eclipse.jface.wizard.IWizardPage;
 import org.eclipse.jface.wizard.Wizard;
 import saros.SarosPluginContext;
-import saros.filesystem.EclipseReferencePointImpl;
+import saros.filesystem.EclipseReferencePoint;
 import saros.filesystem.IReferencePoint;
 import saros.net.xmpp.JID;
 import saros.ui.ImageManager;
@@ -85,7 +85,7 @@ public class StartSessionWizard extends Wizard {
     SarosView.clearNotifications();
 
     Set<IReferencePoint> referencePoints =
-        selectedResources.stream().map(EclipseReferencePointImpl::new).collect(Collectors.toSet());
+        selectedResources.stream().map(EclipseReferencePoint::new).collect(Collectors.toSet());
 
     CollaborationUtils.startSession(referencePoints, selectedContacts);
 
