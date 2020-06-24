@@ -25,13 +25,13 @@ import saros.filesystem.IFile;
  */
 // TODO add probability of hash collisions, lower bound should be 1 / (2^32 *
 // 2^128)
-public final class FileSystemChecksumCache implements IChecksumCache {
+public abstract class FileSystemChecksumCache<U> implements IChecksumCache {
 
   private static final Logger log = Logger.getLogger(FileSystemChecksumCache.class);
 
   private static final int SEED = 0xDEADBEEF;
 
-  private final IAbsolutePathResolver absolutePathResolver;
+  private final IAbsolutePathResolver<U> absolutePathResolver;
 
   private static class Murmur3Hash<T> {
 
@@ -72,11 +72,11 @@ public final class FileSystemChecksumCache implements IChecksumCache {
     }
   }
 
-  private final IFileContentChangedListener fileContentChangedListener =
-      new IFileContentChangedListener() {
+  private final IFileContentChangedListener<U> fileContentChangedListener =
+      new IFileContentChangedListener<U>() {
 
         @Override
-        public void fileContentChanged(IFile file) {
+        public void fileContentChanged(U file) {
           synchronized (FileSystemChecksumCache.this) {
             final String path = absolutePathResolver.getAbsolutePath(file);
 
@@ -98,7 +98,7 @@ public final class FileSystemChecksumCache implements IChecksumCache {
               if (log.isTraceEnabled())
                 log.trace("invalidating checksum for new file: " + path + " [" + hash + "]");
 
-              addChecksum(file, 0);
+              addChecksumInternal(file, 0);
               getHash(path, hash).setObject(null);
             }
           }
@@ -108,22 +108,32 @@ public final class FileSystemChecksumCache implements IChecksumCache {
   private Map<Integer, Object> cache = new HashMap<Integer, Object>();
 
   public FileSystemChecksumCache(
-      IFileContentChangedNotifier fileContentChangedNotifier,
-      IAbsolutePathResolver absolutePathResolver) {
+      IFileContentChangedNotifier<U> fileContentChangedNotifier,
+      IAbsolutePathResolver<U> absolutePathResolver) {
 
     fileContentChangedNotifier.addFileContentChangedListener(fileContentChangedListener);
 
     this.absolutePathResolver = absolutePathResolver;
   }
 
+  /**
+   * Converts the given Saros file object to the internal file representation.
+   *
+   * @param file the file to convert
+   * @return the internal representation of the given file
+   */
+  protected abstract U convert(IFile file);
+
   @Override
   @SuppressWarnings({"unchecked"})
   public synchronized Long getChecksum(IFile file) {
 
-    final String path = absolutePathResolver.getAbsolutePath(file);
+    final U internalFile = convert(file);
+
+    final String path = absolutePathResolver.getAbsolutePath(internalFile);
 
     if (path == null) {
-      logNoValidPath(file);
+      logNoValidPath(internalFile);
       return null;
     }
 
@@ -161,8 +171,15 @@ public final class FileSystemChecksumCache implements IChecksumCache {
   }
 
   @Override
-  @SuppressWarnings("unchecked")
   public synchronized boolean addChecksum(IFile file, long checksum) {
+
+    final U internalFile = convert(file);
+
+    return addChecksumInternal(internalFile, checksum);
+  }
+
+  @SuppressWarnings("unchecked")
+  private synchronized boolean addChecksumInternal(U file, long checksum) {
 
     final String path = absolutePathResolver.getAbsolutePath(file);
 
@@ -367,7 +384,7 @@ public final class FileSystemChecksumCache implements IChecksumCache {
     return b & 0xFF;
   }
 
-  private void logNoValidPath(IFile file) {
+  private void logNoValidPath(U file) {
     if (log.isTraceEnabled()) log.trace("failed to obtain absolute path for file : " + file);
   }
 

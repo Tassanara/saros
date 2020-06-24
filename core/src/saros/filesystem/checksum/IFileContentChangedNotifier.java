@@ -1,8 +1,8 @@
 package saros.filesystem.checksum;
 
-public interface IFileContentChangedNotifier {
+public interface IFileContentChangedNotifier<T> {
 
-  public void addFileContentChangedListener(IFileContentChangedListener listener);
+  public void addFileContentChangedListener(IFileContentChangedListener<T> listener);
 
-  public void removeFileContentChangedListener(IFileContentChangedListener listener);
+  public void removeFileContentChangedListener(IFileContentChangedListener<T> listener);
 }

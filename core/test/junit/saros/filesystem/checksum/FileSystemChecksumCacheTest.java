@@ -11,7 +11,7 @@ import saros.filesystem.IFile;
 
 public class FileSystemChecksumCacheTest {
 
-  private IAbsolutePathResolver absolutePathResolver;
+  private IAbsolutePathResolver<IFile> absolutePathResolver;
 
   private IFile collidingA0;
   private IFile collidingA1;
@@ -21,21 +21,35 @@ public class FileSystemChecksumCacheTest {
 
   private IFile nonColliding;
 
-  private IFileContentChangedListener listener;
+  private IFileContentChangedListener<IFile> listener;
 
-  private IFileContentChangedNotifier notifier =
-      new IFileContentChangedNotifier() {
+  private IFileContentChangedNotifier<IFile> notifier =
+      new IFileContentChangedNotifier<IFile>() {
 
         @Override
-        public void addFileContentChangedListener(IFileContentChangedListener listener) {
+        public void addFileContentChangedListener(IFileContentChangedListener<IFile> listener) {
           FileSystemChecksumCacheTest.this.listener = listener;
         }
 
         @Override
-        public void removeFileContentChangedListener(IFileContentChangedListener listener) {
+        public void removeFileContentChangedListener(IFileContentChangedListener<IFile> listener) {
           // NOP
         }
       };
+
+  private static class TestFileSystemChecksumCache extends FileSystemChecksumCache<IFile> {
+
+    public TestFileSystemChecksumCache(
+        IFileContentChangedNotifier<IFile> fileContentChangedNotifier,
+        IAbsolutePathResolver<IFile> absolutePathResolver) {
+      super(fileContentChangedNotifier, absolutePathResolver);
+    }
+
+    @Override
+    protected IFile convert(IFile file) {
+      return file;
+    }
+  }
 
   @Before
   public void setup() {
@@ -60,7 +74,7 @@ public class FileSystemChecksumCacheTest {
 
   @Test
   public void testGetChecksumOfNonExistingEntry() {
-    IChecksumCache cache = new FileSystemChecksumCache(notifier, absolutePathResolver);
+    IChecksumCache cache = new TestFileSystemChecksumCache(notifier, absolutePathResolver);
 
     // add a colliding entry increase branch coverage
     // has someone 3 different strings that have the same hashcode ? :P
@@ -72,14 +86,14 @@ public class FileSystemChecksumCacheTest {
 
   @Test
   public void testSingleNewInsert() {
-    IChecksumCache cache = new FileSystemChecksumCache(notifier, absolutePathResolver);
+    IChecksumCache cache = new TestFileSystemChecksumCache(notifier, absolutePathResolver);
     assertFalse(cache.addChecksum(collidingA0, 5L));
     assertEquals(Long.valueOf(5), cache.getChecksum(collidingA0));
   }
 
   @Test
   public void testNonCollidingNewInserts() {
-    IChecksumCache cache = new FileSystemChecksumCache(notifier, absolutePathResolver);
+    IChecksumCache cache = new TestFileSystemChecksumCache(notifier, absolutePathResolver);
     assertFalse(cache.addChecksum(collidingA0, 5L));
     assertFalse(cache.addChecksum(collidingB0, 6L));
 
@@ -90,7 +104,7 @@ public class FileSystemChecksumCacheTest {
   @Test
   public void testInsertCollidingPathes() {
 
-    IChecksumCache cache = new FileSystemChecksumCache(notifier, absolutePathResolver);
+    IChecksumCache cache = new TestFileSystemChecksumCache(notifier, absolutePathResolver);
 
     cache.addChecksum(collidingA0, 5L);
     cache.addChecksum(collidingA1, 6L);
@@ -106,7 +120,7 @@ public class FileSystemChecksumCacheTest {
 
   @Test
   public void testChecksumInvalidationOnExistingChecksums() {
-    IChecksumCache cache = new FileSystemChecksumCache(notifier, absolutePathResolver);
+    IChecksumCache cache = new TestFileSystemChecksumCache(notifier, absolutePathResolver);
 
     cache.addChecksum(collidingB0, 5L);
     cache.addChecksum(collidingA0, 5L);
@@ -123,7 +137,7 @@ public class FileSystemChecksumCacheTest {
 
   @Test
   public void testaddChecksumsAfterFileContentChanged() {
-    IChecksumCache cache = new FileSystemChecksumCache(notifier, absolutePathResolver);
+    IChecksumCache cache = new TestFileSystemChecksumCache(notifier, absolutePathResolver);
 
     listener.fileContentChanged(collidingB0);
     listener.fileContentChanged(collidingA0);
@@ -140,7 +154,7 @@ public class FileSystemChecksumCacheTest {
 
   @Test
   public void testUpdateChecksum() {
-    IChecksumCache cache = new FileSystemChecksumCache(notifier, absolutePathResolver);
+    IChecksumCache cache = new TestFileSystemChecksumCache(notifier, absolutePathResolver);
     cache.addChecksum(nonColliding, 5L);
     cache.addChecksum(collidingA0, 5L);
     cache.addChecksum(collidingA1, 6L);

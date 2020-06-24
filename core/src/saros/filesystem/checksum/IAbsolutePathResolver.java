@@ -10,7 +10,7 @@ import saros.filesystem.IFile;
  * generally shouldn't be a need to resolve absolute paths in the Saros core logic, so think
  * carefully before using this interface for other purposes.
  */
-public interface IAbsolutePathResolver {
+public interface IAbsolutePathResolver<T> {
 
   /**
    * Returns the absolute path for the given IFile.
@@ -19,5 +19,5 @@ public interface IAbsolutePathResolver {
    * @return the absolute path for the given IFile or <code>null</code> if no such path could be
    *     constructed
    */
-  String getAbsolutePath(IFile file);
+  String getAbsolutePath(T file);
 }
