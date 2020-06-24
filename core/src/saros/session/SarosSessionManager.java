@@ -44,6 +44,7 @@ import saros.negotiation.OutgoingSessionNegotiation;
 import saros.negotiation.ResourceNegotiation;
 import saros.negotiation.ResourceNegotiationCollector;
 import saros.negotiation.ResourceNegotiationData;
+import saros.negotiation.ResourceNegotiationFactory;
 import saros.negotiation.ResourceSharingData;
 import saros.negotiation.SessionNegotiation;
 import saros.negotiation.hooks.ISessionNegotiationHook;
@@ -89,6 +90,7 @@ public class SarosSessionManager implements ISarosSessionManager {
   private static final long NEGOTIATION_TIMEOUT = 10000L;
 
   private volatile SarosSession session;
+  private volatile ResourceNegotiationFactory resourceNegotiationFactory;
 
   private final IContainerContext context;
 
@@ -264,6 +266,8 @@ public class SarosSessionManager implements ISarosSessionManager {
       session.start();
       sessionStarted(session);
 
+      resourceNegotiationFactory = session.getComponent(ResourceNegotiationFactory.class);
+
       for (IReferencePoint referencePoint : referencePoints) {
         String referencePointId = String.valueOf(SESSION_ID_GENERATOR.nextInt(Integer.MAX_VALUE));
 
@@ -285,6 +289,8 @@ public class SarosSessionManager implements ISarosSessionManager {
     assert session == null;
 
     session = new SarosSession(id, host, localProperties, hostProperties, context);
+
+    resourceNegotiationFactory = session.getComponent(ResourceNegotiationFactory.class);
 
     log.info("joined uninitialized Saros session");
 
@@ -342,6 +348,7 @@ public class SarosSessionManager implements ISarosSessionManager {
 
       ISarosSession currentSession = session;
       session = null;
+      resourceNegotiationFactory = null;
 
       sessionEnded(currentSession, reason);
 
@@ -433,9 +440,17 @@ public class SarosSessionManager implements ISarosSessionManager {
         return;
       }
 
+      ResourceNegotiationFactory currentResourceNegotiationFactory = resourceNegotiationFactory;
+
+      if (currentResourceNegotiationFactory == null) {
+        log.warn(
+            "could not accept resource negotiation because no resource negotiation factory is present");
+        return;
+      }
+
       try {
         negotiation =
-            negotiationFactory.newIncomingResourceNegotiation(
+            currentResourceNegotiationFactory.newIncomingResourceNegotiation(
                 remoteAddress, negotiationID, resourceNegotiationData, this, session);
 
         negotiation.setNegotiationListener(negotiationListener);
@@ -627,6 +642,14 @@ public class SarosSessionManager implements ISarosSessionManager {
       return;
     }
 
+    ResourceNegotiationFactory currentResourceNegotiationFactory = resourceNegotiationFactory;
+
+    if (currentResourceNegotiationFactory == null) {
+      log.warn(
+          "could not stat a resource negotiation because no resource negotiation factory is present");
+      return;
+    }
+
     List<User> recipients = new ArrayList<>();
     if (session.isHost()) {
       /*
@@ -650,7 +673,7 @@ public class SarosSessionManager implements ISarosSessionManager {
     try {
       for (User user : recipients) {
         AbstractOutgoingResourceNegotiation negotiation =
-            negotiationFactory.newOutgoingResourceNegotiation(
+            currentResourceNegotiationFactory.newOutgoingResourceNegotiation(
                 user.getJID(), resourceSharingData, this, session);
 
         negotiation.setNegotiationListener(negotiationListener);
@@ -669,8 +692,9 @@ public class SarosSessionManager implements ISarosSessionManager {
   public void startSharingReferencePoints(JID user) {
 
     ISarosSession currentSession = session;
+    ResourceNegotiationFactory currentResourceNegotiationFactory = resourceNegotiationFactory;
 
-    if (currentSession == null) {
+    if (currentSession == null || currentResourceNegotiationFactory == null) {
       /*
        * as this currently only called by the OutgoingSessionNegotiation
        * job just silently return
@@ -714,7 +738,7 @@ public class SarosSessionManager implements ISarosSessionManager {
         }
 
         negotiation =
-            negotiationFactory.newOutgoingResourceNegotiation(
+            currentResourceNegotiationFactory.newOutgoingResourceNegotiation(
                 user, currentSharedReferencePoints, this, currentSession);
 
         negotiation.setNegotiationListener(negotiationListener);

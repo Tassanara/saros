@@ -42,6 +42,7 @@ import saros.context.IContainerContext;
 import saros.context.IContextKeyBindings;
 import saros.editor.EditorManager;
 import saros.filesystem.IPathFactory;
+import saros.filesystem.checksum.IChecksumCache;
 import saros.net.IConnectionManager;
 import saros.net.IReceiver;
 import saros.net.ITransmitter;
@@ -302,6 +303,9 @@ public class SarosSessionTest {
 
     addMockedComponent(IPathFactory.class);
     addMockedComponent(ISarosSessionManager.class);
+
+    addMockedComponent(IChecksumCache.class);
+    addMockedComponent(saros.filesystem.IWorkspace.class);
 
     container.start();
   }
