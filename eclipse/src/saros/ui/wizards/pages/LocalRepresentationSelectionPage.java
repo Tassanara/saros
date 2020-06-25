@@ -484,7 +484,7 @@ public class LocalRepresentationSelectionPage extends WizardPage {
    * project path is selected.
    */
   private void preselectValues() {
-    // force pre-selection of already shared projects
+    // force pre-selection of already shared reference points
     for (Entry<String, ReferencePointOptionComposite> entry :
         referencePointOptionComposites.entrySet()) {
 
