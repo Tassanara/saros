@@ -36,12 +36,7 @@ import saros.ui.Messages;
 import saros.util.FileUtils;
 import saros.util.ThreadUtils;
 
-/**
- * Offers convenient methods for collaboration actions like sharing a project resources.
- *
- * @author bkahlert
- * @author kheld
- */
+/** Offers convenient methods for interacting with the session. */
 public class CollaborationUtils {
 
   private static final Logger log = Logger.getLogger(CollaborationUtils.class);
@@ -273,24 +268,23 @@ public class CollaborationUtils {
    */
   private static String getSessionDescription(ISarosSession sarosSession) {
 
-    final Set<IReferencePoint> projects = sarosSession.getReferencePoints();
+    final Set<IReferencePoint> referencePoints = sarosSession.getReferencePoints();
 
     final StringBuilder result = new StringBuilder();
 
-    for (IReferencePoint project : projects) {
+    for (IReferencePoint referencePoint : referencePoints) {
 
       final Pair<Long, Long> fileCountAndSize;
 
       final List<IResource> resources =
-          Collections.singletonList(ResourceConverter.getDelegate(project));
+          Collections.singletonList(ResourceConverter.getDelegate(referencePoint));
 
       fileCountAndSize = FileUtils.getFileCountAndSize(resources, true, IContainer.EXCLUDE_DERIVED);
 
       result.append(
           String.format(
-              "\nProject: %s (%s), Files: %d, Size: %s",
-              project.getName(),
-              "complete",
+              "\nReference Point: %s, Files: %d, Size: %s",
+              referencePoint.getName(),
               fileCountAndSize.getRight(),
               format(fileCountAndSize.getLeft())));
     }
