@@ -34,7 +34,7 @@ public interface Constants {
    * DECORATORS
    */
 
-  String PROJECT_SHARED_DECORATOR = get("SharedProjectDecorator_shared");
+  String PROJECT_SHARED_DECORATOR = get("SharedBaseResourceDecorator_shared");
 
   /* *********************************************
    *
