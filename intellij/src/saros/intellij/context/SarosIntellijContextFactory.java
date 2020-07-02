@@ -8,10 +8,12 @@ import saros.core.ui.eventhandler.UserStatusChangeHandler;
 import saros.core.ui.eventhandler.XMPPAuthorizationHandler;
 import saros.editor.IEditorManager;
 import saros.filesystem.IPathFactory;
+import saros.filesystem.IReferencePointComparator;
 import saros.filesystem.IWorkspace;
 import saros.filesystem.checksum.IChecksumCache;
 import saros.filesystem.checksum.NullChecksumCache;
 import saros.intellij.editor.EditorManager;
+import saros.intellij.filesystem.IntellijReferencePointComparator;
 import saros.intellij.filesystem.IntellijWorkspace;
 import saros.intellij.filesystem.PathFactory;
 import saros.intellij.preferences.IntelliJPreferences;
@@ -42,6 +44,7 @@ public class SarosIntellijContextFactory extends AbstractContextFactory {
       // Core Managers
       Component.create(IEditorManager.class, EditorManager.class),
       Component.create(ISarosSessionContextFactory.class, SarosIntellijSessionContextFactory.class),
+      Component.create(IReferencePointComparator.class, IntellijReferencePointComparator.class),
 
       // Additional resource negotiation data providers
       Component.create(IntellijPossibleRepresentationProvider.class),

@@ -12,8 +12,10 @@ import saros.communication.chat.muc.negotiation.MUCNegotiationManager;
 import saros.editor.EditorManager;
 import saros.editor.IEditorManager;
 import saros.filesystem.EclipsePathFactory;
+import saros.filesystem.EclipseReferencePointComparator;
 import saros.filesystem.EclipseWorkspaceImpl;
 import saros.filesystem.IPathFactory;
+import saros.filesystem.IReferencePointComparator;
 import saros.filesystem.IWorkspace;
 import saros.filesystem.checksum.EclipseAbsolutePathResolver;
 import saros.filesystem.checksum.FileContentNotifierBridge;
@@ -62,6 +64,7 @@ public class SarosEclipseContextFactory extends AbstractContextFactory {
       // do not forget to enable the option in the GeneralPreferencePage once it is fixed
       // Component.create(UndoManager.class),
       Component.create(ISarosSessionContextFactory.class, SarosEclipseSessionContextFactory.class),
+      Component.create(IReferencePointComparator.class, EclipseReferencePointComparator.class),
 
       // Additional resource negotiation data providers
       Component.create(EclipsePossibleRepresentationProvider.class),

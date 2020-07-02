@@ -9,6 +9,7 @@ import saros.context.AbstractContextFactory;
 import saros.context.IContextKeyBindings;
 import saros.filesystem.IPath;
 import saros.filesystem.IPathFactory;
+import saros.filesystem.IReferencePointComparator;
 import saros.filesystem.IWorkspace;
 import saros.filesystem.checksum.IChecksumCache;
 import saros.filesystem.checksum.NullChecksumCache;
@@ -23,6 +24,7 @@ import saros.server.console.ShareCommand;
 import saros.server.dummies.NullRemoteProgressIndicatorFactory;
 import saros.server.filesystem.ServerPathFactoryImpl;
 import saros.server.filesystem.ServerPathImpl;
+import saros.server.filesystem.ServerReferencePointComparator;
 import saros.server.filesystem.ServerWorkspaceImpl;
 import saros.server.net.ServerFeatureAdvertiser;
 import saros.server.net.SubscriptionAuthorizer;
@@ -62,6 +64,7 @@ public class ServerContextFactory extends AbstractContextFactory {
     // File System
     c.addComponent(IPathFactory.class, ServerPathFactoryImpl.class);
     c.addComponent(IWorkspace.class, createWorkspace());
+    c.addComponent(IReferencePointComparator.class, ServerReferencePointComparator.class);
 
     // Preferences
     c.addComponent(IPreferenceStore.class, PersistencePreferenceStore.class);

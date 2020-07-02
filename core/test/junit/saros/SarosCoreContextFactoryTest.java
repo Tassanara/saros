@@ -9,6 +9,7 @@ import saros.context.IContainerContext;
 import saros.context.IContextFactory;
 import saros.context.IContextKeyBindings;
 import saros.editor.IEditorManager;
+import saros.filesystem.IReferencePointComparator;
 import saros.filesystem.IWorkspace;
 import saros.filesystem.checksum.IChecksumCache;
 import saros.monitoring.remote.IRemoteProgressIndicatorFactory;
@@ -36,7 +37,8 @@ public class SarosCoreContextFactoryTest {
       Preferences.class,
       IWorkspace.class,
       IEditorManager.class,
-      IChecksumCache.class
+      IChecksumCache.class,
+      IReferencePointComparator.class,
     };
 
     ContextMocker.addMocks(container, Arrays.asList(dependencies));
