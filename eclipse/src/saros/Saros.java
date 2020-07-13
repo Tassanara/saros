@@ -1,10 +1,14 @@
 package saros;
 
+import java.io.File;
 import java.io.InputStream;
+import java.net.URL;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.log4j.Logger;
-import org.apache.log4j.PropertyConfigurator;
-import org.apache.log4j.helpers.LogLog;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.core.LoggerContext;
+import org.apache.logging.log4j.status.StatusLogger;
 import org.eclipse.core.runtime.Platform;
 import org.eclipse.core.runtime.preferences.ConfigurationScope;
 import org.eclipse.swt.SWTException;
@@ -38,6 +42,8 @@ public class Saros extends AbstractUIPlugin {
 
   /** This is the Bundle-SymbolicName (a.k.a the pluginID) */
   public static final String PLUGIN_ID = "saros.eclipse"; // $NON-NLS-1$
+
+  private static final String LOG4J2_CONFIG_FILENAME = "saros_log4j2.xml";
 
   private final IWorkbenchListener workbenchShutdownListener =
       new IWorkbenchListener() {
@@ -84,15 +90,17 @@ public class Saros extends AbstractUIPlugin {
           Saros.class.getClassLoader().getResourceAsStream("saros.properties"); // $NON-NLS-1$
 
       if (sarosProperties == null) {
-        LogLog.warn(
-            "could not initialize Saros properties because the 'saros.properties'"
-                + " file could not be found on the current JAVA class path");
+        StatusLogger.getLogger()
+            .warn(
+                "could not initialize Saros properties because the 'saros.properties'"
+                    + " file could not be found on the current JAVA class path");
       } else {
         System.getProperties().load(sarosProperties);
         sarosProperties.close();
       }
     } catch (Exception e) {
-      LogLog.error("could not load saros property file 'saros.properties'", e); // $NON-NLS-1$
+      StatusLogger.getLogger()
+          .error("could not load saros property file 'saros.properties'", e); // $NON-NLS-1$
     }
 
     setInitialized(false);
@@ -260,29 +268,34 @@ public class Saros extends AbstractUIPlugin {
   }
 
   private void setupLoggers() {
-    /*
-     * HACK this is not the way OSGi works but it currently fulfill its
-     * purpose
-     */
-    final ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
 
     final boolean isDebugMode = Boolean.getBoolean("saros.debug") || isDebugging(); // $NON-NLS-1$
 
-    final String log4jPropertyFile =
-        isDebugMode
-            ? "saros_debug.log4j.properties" //$NON-NLS-1$
-            : "saros_release.log4j.properties"; //$NON-NLS-1$
-
     try {
-      // change the context class loader so Log4J will find the appenders
-      Thread.currentThread().setContextClassLoader(Saros.class.getClassLoader());
+      File mainLogDir = getStateLocation().toFile();
+      final String logDir = mainLogDir + File.separator + "log";
 
-      PropertyConfigurator.configure(Saros.class.getClassLoader().getResource(log4jPropertyFile));
+      final Level logLevel = isDebugMode ? Level.ALL : Level.WARN;
+
+      URL configFileU = getBundle().getResource(LOG4J2_CONFIG_FILENAME);
+      if (configFileU == null) {
+        throw new RuntimeException(
+            "Failed to get the log4j2 config file from the bundle class loader");
+      }
+      String configFileUri = configFileU.toString();
+
+      // set config file to be used
+      System.setProperty("log4j.configurationFile", configFileUri);
+      // set properties to be used in the config file
+      System.setProperty("logging.logDir", logDir);
+      System.setProperty("logging.logLevel", logLevel.name());
+
+      // trigger reconfiguration with new properties and config file
+      LoggerContext context = (LoggerContext) LogManager.getContext(false);
+      context.reconfigure();
     } catch (RuntimeException e) {
-      System.err.println("initializing log support failed"); // $NON-NLS-1$
+      StatusLogger.getLogger().error("initializing loggers failed", e);
       e.printStackTrace();
-    } finally {
-      Thread.currentThread().setContextClassLoader(contextClassLoader);
     }
 
     log = Logger.getLogger(this.getClass());
