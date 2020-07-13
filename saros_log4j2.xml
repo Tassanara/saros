@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+Using this configuration file requires to set the system properties:
+- logging.logLevel the log level that has to be logged (e.g. set it to "warn"
+  to avoid logging messages with a lower level than "warn" (e.g. "debug"))
+- logging.logDir the target directory for all log files
+-->
+<Configuration status="error">
+
+  <Appenders>
+    <Console name="SarosConsoleAppender" target="SYSTEM_OUT">
+      <PatternLayout pattern="%-5p %d{HH:mm:ss,SSS} [%t] (%F:%L) %m%n"/>
+      <ThresholdFilter level="${sys:logging.logLevel}" onMatch="ACCEPT" onMismatch="DENY"/>
+    </Console>
+
+    <RollingFile name="FileLogAppender" fileName="${sys:logging.logDir}/saros.log"
+                   filePattern="${sys:logging.logDir}/archive/saros-%d{MM-dd-yyyy_HH-mm-ss}-%i.log.gz">
+      <PatternLayout pattern="%-5p %d{HH:mm:ss,SSS} [%t] (%F:%L) %m%n" />
+      <Policies>
+        <OnStartupTriggeringPolicy />
+      </Policies>
+      <DefaultRolloverStrategy max="5"/>
+      <ThresholdFilter level="${sys:logging.logLevel}" onMatch="ACCEPT" onMismatch="DENY"/>
+    </RollingFile>
+
+    <RollingFile name="ErrorFileAppender" fileName="${sys:logging.logDir}/saros-errors.log"
+                   filePattern="${sys:logging.logDir}/archive/saros-errors-%d{MM-dd-yyyy_HH-mm-ss}-%i.log.gz">
+      <PatternLayout pattern="%-5p %d{HH:mm:ss,SSS} [%t] (%F:%L) %m%n" />
+      <Policies>
+        <OnStartupTriggeringPolicy />
+      </Policies>
+      <DefaultRolloverStrategy max="5"/>
+      <ThresholdFilter level="warn" onMatch="ACCEPT" onMismatch="DENY"/>
+    </RollingFile>
+  </Appenders>
+
+  <Loggers>
+
+    <Root level="all">
+      <AppenderRef ref="SarosConsoleAppender"/>
+      <AppenderRef ref="FileLogAppender"/>
+      <AppenderRef ref="ErrorFileAppender"/>
+    </Root>
+  </Loggers>
+
+</Configuration>
