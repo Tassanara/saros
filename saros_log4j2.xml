@@ -41,6 +41,13 @@ Using this configuration file requires to set the system properties:
       <AppenderRef ref="FileLogAppender"/>
       <AppenderRef ref="ErrorFileAppender"/>
     </Root>
+
+    <!-- Logger only used by stf to avoid flooding the log with swtbot's trace messages -->
+    <Logger name="org.eclipse.swtbot" level="warn">
+      <AppenderRef ref="SarosConsoleAppender"/>
+      <AppenderRef ref="FileLogAppender"/>
+      <AppenderRef ref="ErrorFileAppender"/>
+    </Logger>
   </Loggers>
 
 </Configuration>

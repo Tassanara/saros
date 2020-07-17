@@ -59,4 +59,13 @@ tasks {
     artifacts {
         add("testing", testJar)
     }
+    /*
+     * Copy the log4j2 files into the eclipse project dir
+     * to make them available for PDE.
+     */
+    register("copyLogFiles", Copy::class) {
+      into("${project.projectDir}/")
+      from(rootProject.file("log4j2.xml"))
+      from(rootProject.file("saros_log4j2.xml"))
+    }
 }

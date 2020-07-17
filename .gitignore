@@ -25,6 +25,8 @@ buildSrc/.gradle
 /eclipse/lib
 /eclipse/log4j2.xml
 /eclipse/saros_log4j2.xml
+/stf/log4j2.xml
+/stf/saros_log4j2.xml
 /core/lib
 /stf/lib
 /stf.test/lib
